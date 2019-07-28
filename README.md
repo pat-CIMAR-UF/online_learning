@@ -14,13 +14,16 @@ For a standalone implementation of the clustering method, please refer to: [http
 
 # Install & Build
 ```bash
-$ cd catkin_ws/src
 // Install prerequisite packages 
-$ git clone https://github.com/wg-perception/people.git
-$ git clone https://github.com/DLu/wu_ros_tools.git
+$ sudo apt-get install ros-kinetic-people
 $ sudo apt-get install ros-kinetic-bfl
+$ mkdir -p svm/src
+$ cd svm/src
+$ git clone https://github.com/DLu/wu_ros_tools.git
+
 // The core 
-$ git clone https://github.com/yzrobot/online_learning
+$ git clone https://github.com/pat-CIMAR-UF/online_learning.git
+
 // Build
 $ cd catkin_ws
 $ catkin_make
