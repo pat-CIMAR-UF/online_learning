@@ -32,7 +32,7 @@ $ catkin_make
 # Run
 After catkin_make succeed, modify 'line 3' of online_learning/object3d_detector/launch/object3d_detector.launch, and make the value is the path where your bag files are located:
 
-`<arg name="bag" value="/home/yq/Downloads/LCAS_20160523_1200_1218.bag"/>`
+`<arg name="bag" value="/home/yq/online_learning_data/LCAS_20160523_1200_1218.bag"/>`
 
 The bag file offered by [Lincoln Centre for Autonomous Systems](http://lcas.lincoln.ac.uk) is in velodyne_msgs/VelodyneScan message type, so we would need related velodyne packages in ROS:
 ```bash
