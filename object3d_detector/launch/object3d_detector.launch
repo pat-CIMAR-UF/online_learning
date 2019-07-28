@@ -1,6 +1,6 @@
 <launch>
   <!-- rosbag play -->
-  arg name="bag" value="/home/yq/online_learning_data/LCAS_20160523_1200_1218.bag"
+  <arg name="bag" value="/home/yq/online_learning_data/LCAS_20160523_1200_1218.bag"/>
   <param name="use_sim_time" value="true"/>
   <node pkg="rosbag" type="play" name="rosbag_play" args="--clock $(arg bag)" required="true"/>
   
