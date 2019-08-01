@@ -15,6 +15,7 @@
 // SVM
 #include "svm.h"
 
+// Feature Engineering
 typedef struct feature {
   /*** for visualization ***/
   Eigen::Vector4f centroid;
@@ -161,7 +162,7 @@ void Object3dDetector::extractCluster(pcl::PointCloud<pcl::PointXYZI>::Ptr pc) {
   pass.setInputCloud(pc);
   pass.setFilterFieldName("z");
   pass.setFilterLimits(z_limit_min_, z_limit_max_);
-  pass.filter(*pc_indices);
+  pass.filter(*pc_indices); // get data with z value ranging (-0.8, 1.2) meters
   
   boost::array<std::vector<int>, nested_regions_> indices_array;
   for(int i = 0; i < pc_indices->size(); i++) {
@@ -398,8 +399,7 @@ void Object3dDetector::extractFeature(pcl::PointCloud<pcl::PointXYZI>::Ptr pc, F
     float d2; //squared Euclidean distance
     for(int i = 0; i < pc->size(); i++) {
       d2 = pc->points[i].x*pc->points[i].x + pc->points[i].y*pc->points[i].y + pc->points[i].z*pc->points[i].z;
-      if(f.min_distance > d2)
-	f.min_distance = d2;
+      if(f.min_distance > d2) f.min_distance = d2;
     }
     //f.min_distance = sqrt(f.min_distance);
     
@@ -408,7 +408,7 @@ void Object3dDetector::extractFeature(pcl::PointCloud<pcl::PointXYZI>::Ptr pc, F
     pca.setInputCloud(pc);
     pca.project(*pc, *pc_projected);
     // f3: 3D covariance matrix of the cluster.
-    pcl::computeCovarianceMatrixNormalized(*pc_projected, centroid, f.covariance_3d);
+    pcl::computeCovarianceMatrixNormalized(*pc_projected, centroid, f.covariance_3d); // 9 elements
     // f4: The normalized moment of inertia tensor.
     computeMomentOfInertiaTensorNormalized(*pc_projected, f.moment_3d);
     // Navarro et al. assume that a pedestrian is in an upright position.
