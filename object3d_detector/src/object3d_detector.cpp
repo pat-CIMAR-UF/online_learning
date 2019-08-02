@@ -122,10 +122,10 @@ Object3dDetector::Object3dDetector() {
       x_upper_ = atof(params[1].c_str());
       int i = 0;
       while(std::getline(range_file, line)) {
-	boost::split(params, line, boost::is_any_of(" "));
-	svm_scale_range_[i][0] = atof(params[1].c_str());
-	svm_scale_range_[i][1] = atof(params[2].c_str());
-	i++;
+	      boost::split(params, line, boost::is_any_of(" "));
+	      svm_scale_range_[i][0] = atof(params[1].c_str());
+	      svm_scale_range_[i][1] = atof(params[2].c_str());
+	      i++;
 	//std::cerr << i << " " <<  svm_scale_range_[i][0] << " " << svm_scale_range_[i][1] << std::endl;
       }
       use_svm_model_ = true;
