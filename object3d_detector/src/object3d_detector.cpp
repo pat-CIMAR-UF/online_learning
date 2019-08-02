@@ -100,7 +100,8 @@ Object3dDetector::Object3dDetector() {
   use_svm_model_ = false;
   if((svm_model_ = svm_load_model(model_file_name_.c_str())) == NULL) {
     ROS_WARN("[object3d detector] can not load SVM model, use model-free detection.");
-  } else {
+  } 
+  else {
     ROS_INFO("[object3d detector] load SVM model from '%s'.", model_file_name_.c_str());
     is_probability_model_ = svm_check_probability_model(svm_model_)?true:false;
     svm_node_ = (struct svm_node *)malloc((FEATURE_SIZE+1)*sizeof(struct svm_node)); // 1 more size for end index (-1)
@@ -154,6 +155,8 @@ void Object3dDetector::pointCloudCallback(const sensor_msgs::PointCloud2::ConstP
 
 const int nested_regions_ = 14;
 int zone_[nested_regions_] = {2,3,3,3,3,3,3,2,3,3,3,3,3,3}; // for more details, see our IROS'17 paper.
+
+// This function directly extracted all features.
 void Object3dDetector::extractCluster(pcl::PointCloud<pcl::PointXYZI>::Ptr pc) {
   features_.clear();
   
@@ -329,7 +332,7 @@ void computeHistogramNormalized(pcl::PointCloud<pcl::PointXYZI>::Ptr pc, int hor
 
 void computeSlice(pcl::PointCloud<pcl::PointXYZI>::Ptr pc, int n, float *slice) {
   Eigen::Vector4f pc_min, pc_max;
-  pcl::getMinMax3D(*pc, pc_min, pc_max);
+  pcl::getMinMax3D(*pc, pc_min, pc_max); // Get bound of the point cloud
   
   pcl::PointCloud<pcl::PointXYZI>::Ptr blocks[n];
   float itv = (pc_max[2] - pc_min[2]) / n;
@@ -341,7 +344,7 @@ void computeSlice(pcl::PointCloud<pcl::PointXYZI>::Ptr pc, int n, float *slice) 
       j = std::min((n-1), (int)((pc->points[i].z - pc_min[2]) / itv));
       blocks[j]->points.push_back(pc->points[i]);
     }
-    
+    // Now the clusters are sliced into 10 pieces
     Eigen::Vector4f block_min, block_max;
     for(int i = 0; i < n; i++) {
       if(blocks[i]->size() > 0) {
@@ -349,13 +352,21 @@ void computeSlice(pcl::PointCloud<pcl::PointXYZI>::Ptr pc, int n, float *slice) 
 	// pcl::PointCloud<pcl::PointXYZI>::Ptr block_projected(new pcl::PointCloud<pcl::PointXYZI>);
 	// pca.setInputCloud(blocks[i]);
 	// pca.project(*blocks[i], *block_projected);
-	pcl::getMinMax3D(*blocks[i], block_min, block_max);
-      } else {
-	block_min.setZero();
-	block_max.setZero();
+  /*
+  i = 0: slice[0] slice[1]
+  i = 1: slice[2] slice[3]
+  i = 2: slice[4] slice[5]
+  i = 9: slice[18] slice[19]
+   */
+	      pcl::getMinMax3D(*blocks[i], block_min, block_max); // block_min and block_max return boundaries of x-y-z in a given point cloud
       }
-      slice[i*2] = block_max[0] - block_min[0];
-      slice[i*2+1] = block_max[1] - block_min[1];
+      else {
+	      block_min.setZero();
+	      block_max.setZero();
+      }
+      slice[i*2] = block_max[0] - block_min[0]; //extract x boundary feature
+      slice[i*2+1] = block_max[1] - block_min[1]; //extract y boundary feature
+      // z boundary info is kinda given, because you are slicing according to z value
     }
   } else {
     for(int i = 0; i < 20; i++)
@@ -363,18 +374,18 @@ void computeSlice(pcl::PointCloud<pcl::PointXYZI>::Ptr pc, int n, float *slice) 
   }
 }
 
-void computeIntensity(pcl::PointCloud<pcl::PointXYZI>::Ptr pc, int bins, float *intensity) {
+void computeIntensity(pcl::PointCloud<pcl::PointXYZI>::Ptr pc, int bins, float *intensity) {//bins are given as 25
   float sum = 0, mean = 0, sum_dev = 0;
   float min = FLT_MAX, max = -FLT_MAX;
   for(int i = 0; i < 27; i++)
     intensity[i] = 0;
-  
+  //find min and max intensity
   for(size_t i = 0; i < pc->size(); i++) {
     sum += pc->points[i].intensity;
     min = std::min(min, pc->points[i].intensity);
     max = std::max(max, pc->points[i].intensity);
   }
-  mean = sum / pc->size();
+  mean = sum / pc->size(); // calculate the mean intensity
   
   for(size_t i = 0; i < pc->size(); i++) {
     sum_dev += (pc->points[i].intensity-mean)*(pc->points[i].intensity-mean);
@@ -410,7 +421,7 @@ void Object3dDetector::extractFeature(pcl::PointCloud<pcl::PointXYZI>::Ptr pc, F
     // f3: 3D covariance matrix of the cluster.
     pcl::computeCovarianceMatrixNormalized(*pc_projected, centroid, f.covariance_3d); // 9 elements
     // f4: The normalized moment of inertia tensor.
-    computeMomentOfInertiaTensorNormalized(*pc_projected, f.moment_3d);
+    computeMomentOfInertiaTensorNormalized(*pc_projected, f.moment_3d); // feature of motion
     // Navarro et al. assume that a pedestrian is in an upright position.
     //pcl::PointCloud<pcl::PointXYZI>::Ptr main_plane(new pcl::PointCloud<pcl::PointXYZI>), secondary_plane(new pcl::PointCloud<pcl::PointXYZI>);
     //computeProjectedPlane(pc, pca.getEigenVectors(), 2, centroid, main_plane);
@@ -421,9 +432,9 @@ void Object3dDetector::extractFeature(pcl::PointCloud<pcl::PointXYZI>::Ptr pc, F
     //computeHistogramNormalized(main_plane, 7, 14, f.histogram_main_2d);
     //computeHistogramNormalized(secondary_plane, 5, 9, f.histogram_second_2d);
     // f8
-    computeSlice(pc, 10, f.slice);
+    computeSlice(pc, 10, f.slice); // # is 10 but end up with 20 features because the slices return x and y occupancy info
     // f9
-    computeIntensity(pc, 25, f.intensity);
+    computeIntensity(pc, 25, f.intensity); //
   }
 }
 
@@ -493,11 +504,12 @@ void Object3dDetector::classify() {
       
       // predict
       if(is_probability_model_) {
-	double prob_estimates[svm_model_->nr_class];
+	      double prob_estimates[svm_model_->nr_class];
       	svm_predict_probability(svm_model_, svm_node_, prob_estimates);
-	if(prob_estimates[0] < human_probability_)
-	  continue;
-      } else {
+	      if(prob_estimates[0] < human_probability_)
+	        continue;
+      }
+      else {
       	if(svm_predict(svm_model_, svm_node_) != 1)
       	  continue;
       }
