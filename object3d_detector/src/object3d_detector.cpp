@@ -77,7 +77,7 @@ public:
 };
 
 Object3dDetector::Object3dDetector() {
-  point_cloud_sub_ = node_handle_.subscribe<sensor_msgs::PointCloud2>("velodyne_points", 1, &Object3dDetector::pointCloudCallback, this);
+  point_cloud_sub_ = node_handle_.subscribe<sensor_msgs::PointCloud2>("/os1_cloud_node/points", 1, &Object3dDetector::pointCloudCallback, this);
   
   ros::NodeHandle private_nh("~");
   marker_array_pub_ = private_nh.advertise<visualization_msgs::MarkerArray>("markers", 100);
@@ -85,9 +85,9 @@ Object3dDetector::Object3dDetector() {
   
   /*** Parameters ***/
   private_nh.param<bool>("print_fps", print_fps_, false);
-  private_nh.param<std::string>("frame_id", frame_id_, "velodyne");
-  private_nh.param<float>("z_limit_min", z_limit_min_, -0.8);
-  private_nh.param<float>("z_limit_max", z_limit_max_, 1.2);
+  private_nh.param<std::string>("frame_id", frame_id_, "os1_lidar");
+  private_nh.param<float>("z_limit_min", z_limit_min_, -1.21);
+  private_nh.param<float>("z_limit_max", z_limit_max_, 1);
   private_nh.param<int>("cluster_size_min", cluster_size_min_, 5);
   private_nh.param<int>("cluster_size_max", cluster_size_max_, 30000);
   private_nh.param<float>("human_probability", human_probability_, 0.7);
